@@ -1,0 +1,47 @@
+---
+- name: Deploy Student Login Microservice
+  hosts: local
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - git
+        state: present
+        update_cache: yes
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Clone repository from GitHub
+      git:
+        repo: "https://github.com/YOUR_USERNAME/student-login-microservice.git"
+        dest: /opt/student-login-microservice
+        force: yes
+
+    - name: Run docker-compose
+      command: docker-compose up --build -d
+      args:
+        chdir: /opt/student-login-microservice
+
+    - name: Verify Flask is running
+      uri:
+        url: http://localhost:5000/health
+        method: GET
+        status_code: 200
+      retries: 5
+      delay: 10
+
+    - name: Show success message
+      debug:
+        msg: |
+          ✅ Deployment Complete!
+          Flask API  → http://localhost:5000
+          Prometheus → http://localhost:9090
+          Grafana    → http://localhost:3000
